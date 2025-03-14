@@ -8,14 +8,14 @@ credentialsFile="client_secret_942388970445-ck7iefag4jn02bu92nq94t0o2m1a2ffr.app
 
 # 配置表格信息数组 (表格名称,表格ID,输出文件名,格式类型)
 sheetsAll=(
-    {"merge","1tapDg3OMX_7FkkoIxu23ijw6NNh3lrlV2cA-5Oz3IOI","users.json","list"}
+    {"merge","1tapDg3OMX_7FkkoIxu23ijw6NNh3lrlV2cA-5Oz3IOI"}
 )
 
 ######################################
 # 以下为脚本逻辑，一般不需要修改
 ######################################
 num=${#sheetsAll[*]}
-argCount=4  # 每个表格的参数数量（名称、ID、输出文件名、格式类型）
+argCount=2  # 每个表格的参数数量（名称、ID）
 
 # 检查参数数量是否正确
 if [ "$((num%${argCount}))" != "0" ]; then
@@ -50,17 +50,19 @@ listAll(){
     done
     echo "==============================================="
     echo "附加选项："
-    echo "--all-sheets - 导出所有工作表数据（与表格编号或名称一起使用）"
-    echo "例如: ./export_sheets_oauth.sh 1 --all-sheets"
+    echo "--single-sheet - 只导出默认工作表（与表格编号或名称一起使用）"
+    echo "例如: ./export_sheets_oauth.sh 1 --single-sheet"
 }
 
 idxBegin=-1
 idxEnd=-1
-export_all_sheets=false
+export_all_sheets=true  # 默认为true，导出所有工作表
 
 # 处理命令行参数
 for arg in "$@"; do
-    if [ "$arg" == "--all-sheets" ]; then
+    if [ "$arg" == "--single-sheet" ]; then
+        export_all_sheets=false
+    elif [ "$arg" == "--all-sheets" ]; then
         export_all_sheets=true
     elif [ "$idxBegin" -lt "0" ]; then
         num=`isNum $arg`
@@ -99,7 +101,9 @@ fi
 
 echo "开始导出表格，范围: $((idxBegin+1)) 到 $idxEnd"
 if [ "$export_all_sheets" == "true" ]; then
-    echo "将导出所有工作表数据"
+    echo "将导出所有工作表数据（默认）"
+else
+    echo "将只导出默认工作表"
 fi
 
 # 创建输出目录
@@ -110,15 +114,15 @@ for ((i = idxBegin; i < idxEnd; i++)); do
     idx=$((i*${argCount}))
     name=${sheetsAll[$idx]}
     sheet_id=${sheetsAll[$idx+1]}
-    output_file=${sheetsAll[$idx+2]}
-    format_type=${sheetsAll[$idx+3]}
-    key_field=${sheetsAll[$idx+4]:-""}  # 可选参数，嵌套格式的主键字段
+    output_file="${name}.json"  # 自动生成输出文件名为"表格名称.json"
+    format_type="list"  # 默认格式类型为list
+    key_field=${sheetsAll[$idx+2]:-""}  # 可选参数，嵌套格式的主键字段
     
     echo "正在处理: $name (ID: $sheet_id)"
     
     # 如果需要导出所有工作表，则使用sheet_grouped格式
     if [ "$export_all_sheets" == "true" ]; then
-        echo "将导出所有工作表数据"
+        echo "将导出所有工作表数据（默认）"
         # 使用sheet_grouped格式
         format_type="sheet_grouped"
     else
