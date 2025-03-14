@@ -48,40 +48,49 @@ listAll(){
         nameLower=$(echo $name | tr '[A-Z]' '[a-z]')
         echo $((i + 1)) "- $nameLower"
     done
+    echo "==============================================="
+    echo "附加选项："
+    echo "--all-sheets - 导出所有工作表数据（与表格编号或名称一起使用）"
+    echo "例如: ./export_sheets_oauth.sh 1 --all-sheets"
 }
 
 idxBegin=-1
 idxEnd=-1
+export_all_sheets=false
 
 # 处理命令行参数
-if [ "$#" == "1" ] ; then
-    num=`isNum $1`
-    if [ $num == "true" ]; then
-        if [ $1 == 0 ]; then
-            idxBegin=0
-            idxEnd=$sheetCount
+for arg in "$@"; do
+    if [ "$arg" == "--all-sheets" ]; then
+        export_all_sheets=true
+    elif [ "$idxBegin" -lt "0" ]; then
+        num=`isNum $arg`
+        if [ $num == "true" ]; then
+            if [ $arg == 0 ]; then
+                idxBegin=0
+                idxEnd=$sheetCount
+            else
+                if [ $arg -gt $sheetCount ] || [ $arg -lt 1 ]; then
+                    listAll $arg
+                    exit 1
+                fi
+                idxBegin=$(($arg - 1))
+                idxEnd=$arg
+            fi
         else
-            if [ $1 -gt $sheetCount ] || [ $1 -lt 1 ]; then
-                listAll $1
-                exit 1
-            fi
-            idxBegin=$((1 - 1))
-            idxEnd=$1
+            for ((i = 0; i < $sheetCount; i++)); do
+                idx=$((i*${argCount}))
+                name=${sheetsAll[$idx]}
+                nameLower=$(echo $name | tr '[A-Z]' '[a-z]')
+                argLower=$(echo $arg | tr '[A-Z]' '[a-z]')
+                if [ "$argLower" == "$nameLower" ]; then
+                    idxBegin=$i
+                    idxEnd=$((i + 1))
+                    break
+                fi
+            done
         fi
-    else
-        for ((i = 0; i < $sheetCount; i++)); do
-            idx=$((i*${argCount}))
-            name=${sheetsAll[$idx]}
-            nameLower=$(echo $name | tr '[A-Z]' '[a-z]')
-            argLower=$(echo $1 | tr '[A-Z]' '[a-z]')
-            if [ "$argLower" == "$nameLower" ]; then
-                idxBegin=$i
-                idxEnd=$((i + 1))
-                break
-            fi
-        done
     fi
-fi
+done
 
 if [ "$idxBegin" -lt "0" ] ; then
     listAll $1
@@ -89,6 +98,9 @@ if [ "$idxBegin" -lt "0" ] ; then
 fi
 
 echo "开始导出表格，范围: $((idxBegin+1)) 到 $idxEnd"
+if [ "$export_all_sheets" == "true" ]; then
+    echo "将导出所有工作表数据"
+fi
 
 # 创建输出目录
 mkdir -p output
@@ -103,6 +115,15 @@ for ((i = idxBegin; i < idxEnd; i++)); do
     key_field=${sheetsAll[$idx+4]:-""}  # 可选参数，嵌套格式的主键字段
     
     echo "正在处理: $name (ID: $sheet_id)"
+    
+    # 如果需要导出所有工作表，则使用sheet_grouped格式
+    if [ "$export_all_sheets" == "true" ]; then
+        echo "将导出所有工作表数据"
+        # 使用sheet_grouped格式
+        format_type="sheet_grouped"
+    else
+        echo "将只导出默认工作表"
+    fi
     
     # 构建Python命令的参数
     cmd_args="--sheet_id \"$sheet_id\" --output \"output/$output_file\" --format \"$format_type\" --credentials \"$credentialsFile\""

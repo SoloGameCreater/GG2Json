@@ -62,9 +62,12 @@ def get_sheet_data(service, spreadsheet_id, sheet_name=None):
         # 获取表格信息
         spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
         
-        # 如果未指定工作表名称，使用第一个工作表
+        # 如果未指定工作表名称，则读取所有工作表
         if not sheet_name:
-            sheet_name = spreadsheet['sheets'][0]['properties']['title']
+            all_sheets = []
+            for sheet in spreadsheet['sheets']:
+                all_sheets.append(sheet['properties']['title'])
+            return get_all_sheets_data(service, spreadsheet_id, all_sheets)
         
         # 获取工作表范围
         range_name = f"{sheet_name}"
@@ -95,6 +98,46 @@ def get_sheet_data(service, spreadsheet_id, sheet_name=None):
         print(f"获取表格数据错误: {e}")
         return None
 
+def get_all_sheets_data(service, spreadsheet_id, sheet_names):
+    """获取所有工作表的数据，并按工作表名称分组"""
+    all_data = {}
+    
+    for sheet_name in sheet_names:
+        try:
+            # 获取工作表范围
+            range_name = f"{sheet_name}"
+            
+            # 获取数据
+            result = service.spreadsheets().values().get(
+                spreadsheetId=spreadsheet_id,
+                range=range_name,
+                valueRenderOption='UNFORMATTED_VALUE'
+            ).execute()
+            
+            values = result.get('values', [])
+            
+            if not values:
+                print(f'工作表 {sheet_name} 未找到数据')
+                continue
+            
+            # 将数据转换为字典列表
+            headers = values[0]
+            sheet_data = []
+            for row in values[1:]:
+                # 确保行长度与标题行一致
+                row_data = row + [''] * (len(headers) - len(row))
+                # 创建包含数据的字典
+                row_dict = dict(zip(headers, row_data))
+                sheet_data.append(row_dict)
+            
+            # 将当前工作表的数据添加到总数据中，以工作表名称为键
+            all_data[sheet_name] = sheet_data
+            
+        except Exception as e:
+            print(f"获取工作表 {sheet_name} 数据错误: {e}")
+    
+    return all_data
+
 def export_to_json(data, output_file, format_type="list", key_field=None):
     """将数据导出为JSON文件"""
     if not data:
@@ -108,9 +151,27 @@ def export_to_json(data, output_file, format_type="list", key_field=None):
     # 根据格式类型处理数据
     if format_type == "list":
         # 列表对象格式 - 默认
-        json_data = data
+        # 如果数据是按工作表分组的字典，则将其展平为列表
+        if isinstance(data, dict):
+            flat_data = []
+            for sheet_name, sheet_data in data.items():
+                for item in sheet_data:
+                    item['sheet_name'] = sheet_name
+                    flat_data.append(item)
+            json_data = flat_data
+        else:
+            json_data = data
     elif format_type == "nested":
         # 嵌套对象格式
+        if isinstance(data, dict):
+            # 如果数据已经是按工作表分组的字典，需要先展平
+            flat_data = []
+            for sheet_name, sheet_data in data.items():
+                for item in sheet_data:
+                    item['sheet_name'] = sheet_name
+                    flat_data.append(item)
+            data = flat_data
+            
         if not key_field or key_field not in data[0].keys():
             print(f"错误: 字段 '{key_field}' 不存在或未指定")
             return False
@@ -119,6 +180,24 @@ def export_to_json(data, output_file, format_type="list", key_field=None):
         for item in data:
             key = item.pop(key_field)
             json_data[key] = item
+    elif format_type == "sheet_grouped":
+        # 按工作表分组的格式
+        if isinstance(data, dict):
+            # 数据已经是按工作表分组的，直接使用
+            json_data = data
+        else:
+            # 如果数据是列表，则按sheet_name字段分组
+            json_data = {}
+            for item in data:
+                if 'sheet_name' not in item:
+                    print("错误: 数据中缺少'sheet_name'字段")
+                    return False
+                
+                sheet_name = item.pop('sheet_name')
+                if sheet_name not in json_data:
+                    json_data[sheet_name] = []
+                
+                json_data[sheet_name].append(item)
     else:
         print(f"不支持的格式类型: {format_type}")
         return False
@@ -136,7 +215,7 @@ def main():
     parser.add_argument('--sheet_id', required=True, help='Google表格ID')
     parser.add_argument('--output', required=True, help='输出JSON文件路径')
     parser.add_argument('--credentials', required=True, help='Google API OAuth 2.0凭证JSON文件路径')
-    parser.add_argument('--format', choices=['list', 'nested'], default='list', help='JSON格式类型: list或nested')
+    parser.add_argument('--format', choices=['list', 'nested', 'sheet_grouped'], default='list', help='JSON格式类型: list, nested或sheet_grouped')
     parser.add_argument('--key_field', help='嵌套格式的主键字段名')
     parser.add_argument('--sheet_name', help='工作表名称(默认为第一个工作表)')
     
