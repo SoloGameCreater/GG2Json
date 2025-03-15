@@ -14,6 +14,7 @@
   - 嵌套对象格式 (基于指定的主键)
 - 自动创建输出目录
 - 支持批处理自动化导出多个表格
+- **新功能**: 支持将导出的JSON文件按顶级键拆分成多个子文件
 
 ## 安装依赖
 
@@ -120,6 +121,45 @@ https://docs.google.com/spreadsheets/d/1KM52Dg08TlbETfnsmzm0gj6g__7wvGpXcf-4ZfGO
   }
 }
 ```
+
+## 新增功能：JSON文件拆分
+
+### 功能说明
+
+该功能可以将导出的JSON文件按照顶级键拆分成多个子文件。例如，如果您的JSON文件结构如下：
+
+```json
+{
+  "MergeableItem": [...],
+  "MergeChain": [...]
+}
+```
+
+拆分后将生成两个文件：
+- `MergeableItem.json`
+- `MergeChain.json`
+
+这些文件将保存在原始JSON文件的父目录的父目录下的`export`文件夹中。
+
+### 使用方法
+
+#### 1. 在导出时自动拆分
+
+在使用导出脚本时，添加`--split`参数：
+
+```bash
+python google_sheets_to_json_batch_oauth.py --sheet_id YOUR_SHEET_ID --output output/data.json --credentials YOUR_CREDENTIALS_FILE --format sheet_grouped --split
+```
+
+#### 2. 单独拆分已有的JSON文件
+
+您也可以使用单独的脚本来拆分已经存在的JSON文件：
+
+```bash
+python split_json.py output/merge.json
+```
+
+这将读取`output/merge.json`文件，并将其拆分成多个子文件，保存在`export`目录中。
 
 ## 注意事项
 

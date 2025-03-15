@@ -5,11 +5,26 @@ import os
 import json
 import argparse
 import pickle
+import sys
 from pathlib import Path
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import pandas as pd
+# 导入JSON拆分模块
+from json_splitter import split_json_file
+
+# 设置控制台输出编码为UTF-8
+if sys.platform == 'win32':
+    # 使用更安全的方式设置编码
+    try:
+        import codecs
+        # 检查sys.stdout是否已经是TextIOWrapper
+        if hasattr(sys.stdout, 'buffer'):
+            sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+            sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+    except Exception as e:
+        print(f"设置控制台编码时出错: {e}")
 
 # 定义访问Google Sheets所需的权限范围
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
@@ -218,6 +233,7 @@ def main():
     parser.add_argument('--format', choices=['list', 'nested', 'sheet_grouped'], default='list', help='JSON格式类型: list, nested或sheet_grouped')
     parser.add_argument('--key_field', help='嵌套格式的主键字段名')
     parser.add_argument('--sheet_name', help='工作表名称(默认为第一个工作表)')
+    parser.add_argument('--split', action='store_true', help='是否将导出的JSON文件拆分成多个子文件')
     
     args = parser.parse_args()
     
@@ -238,8 +254,19 @@ def main():
     
     # 导出数据
     success = export_to_json(data, args.output, args.format, args.key_field)
+    if not success:
+        return 1
     
-    return 0 if success else 1
+    # 如果指定了拆分选项，则拆分JSON文件
+    if args.split:
+        print(f"正在拆分JSON文件: {args.output}")
+        split_success = split_json_file(args.output)
+        if not split_success:
+            print("拆分JSON文件失败")
+            return 1
+        print("拆分JSON文件成功")
+    
+    return 0
 
 if __name__ == "__main__":
     exit(main()) 
