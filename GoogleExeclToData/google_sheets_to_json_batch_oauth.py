@@ -234,6 +234,7 @@ def main():
     parser.add_argument('--key_field', help='嵌套格式的主键字段名')
     parser.add_argument('--sheet_name', help='工作表名称(默认为第一个工作表)')
     parser.add_argument('--split', action='store_true', help='是否将导出的JSON文件拆分成多个子文件')
+    parser.add_argument('--no-split', action='store_true', help='不拆分JSON文件（默认会拆分）')
     
     args = parser.parse_args()
     
@@ -257,8 +258,15 @@ def main():
     if not success:
         return 1
     
-    # 如果指定了拆分选项，则拆分JSON文件
+    # 默认拆分JSON文件，除非明确指定--no-split
+    should_split = not args.no_split
+    
+    # 如果明确指定了--split，则覆盖默认行为
     if args.split:
+        should_split = True
+    
+    # 如果需要拆分JSON文件
+    if should_split:
         print(f"正在拆分JSON文件: {args.output}")
         split_success = split_json_file(args.output)
         if not split_success:

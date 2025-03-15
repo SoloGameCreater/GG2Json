@@ -51,17 +51,16 @@ listAll(){
     echo "==============================================="
     echo "附加选项："
     echo "--single-sheet - 只导出默认工作表（与表格编号或名称一起使用）"
-    echo "--split - 将导出的JSON文件按顶级键拆分成多个子文件"
-    echo "例如: ./export_sheets_oauth.sh 1 --single-sheet --split"
+    echo "--no-split - 不拆分JSON文件（默认会拆分）"
+    echo "例如: ./export_sheets_oauth.sh 1 --single-sheet --no-split"
 }
 
 idxBegin=-1
 idxEnd=-1
 export_all_sheets=true  # 默认为true，导出所有工作表
+split_json=true  # 默认拆分JSON文件
 
 # 处理命令行参数
-split_json=false  # 默认不拆分JSON文件
-
 for arg in "$@"; do
     if [ "$arg" == "--single-sheet" ]; then
         export_all_sheets=false
@@ -69,6 +68,8 @@ for arg in "$@"; do
         export_all_sheets=true
     elif [ "$arg" == "--split" ]; then
         split_json=true
+    elif [ "$arg" == "--no-split" ]; then
+        split_json=false
     elif [ "$idxBegin" -lt "0" ]; then
         num=`isNum $arg`
         if [ $num == "true" ]; then
@@ -112,7 +113,9 @@ else
 fi
 
 if [ "$split_json" == "true" ]; then
-    echo "将拆分导出的JSON文件"
+    echo "将拆分导出的JSON文件（默认）"
+else
+    echo "不拆分导出的JSON文件"
 fi
 
 # 创建输出目录
@@ -149,6 +152,8 @@ for ((i = idxBegin; i < idxEnd; i++)); do
     # 如果需要拆分JSON文件，添加--split参数
     if [ "$split_json" == "true" ]; then
         cmd_args="$cmd_args --split"
+    else
+        cmd_args="$cmd_args --no-split"
     fi
     
     # 执行Python脚本

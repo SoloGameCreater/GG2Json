@@ -143,17 +143,29 @@ https://docs.google.com/spreadsheets/d/1KM52Dg08TlbETfnsmzm0gj6g__7wvGpXcf-4ZfGO
 
 ### 使用方法
 
-#### 1. 在导出时自动拆分
+#### 1. 在导出时自动拆分（默认行为）
 
-在使用导出脚本时，添加`--split`参数：
+从v1.1版本开始，导出JSON文件后会默认执行拆分操作，无需添加额外参数：
 
 ```bash
-python google_sheets_to_json_batch_oauth.py --sheet_id YOUR_SHEET_ID --output output/data.json --credentials YOUR_CREDENTIALS_FILE --format sheet_grouped --split
+python google_sheets_to_json_batch_oauth.py --sheet_id YOUR_SHEET_ID --output output/data.json --credentials YOUR_CREDENTIALS_FILE --format sheet_grouped
+```
+
+如果您不希望拆分JSON文件，可以添加`--no-split`参数：
+
+```bash
+python google_sheets_to_json_batch_oauth.py --sheet_id YOUR_SHEET_ID --output output/data.json --credentials YOUR_CREDENTIALS_FILE --format sheet_grouped --no-split
 ```
 
 #### 2. 单独拆分已有的JSON文件
 
 您也可以使用单独的脚本来拆分已经存在的JSON文件：
+
+```bash
+python json_splitter.py --input output/merge.json
+```
+
+或者
 
 ```bash
 python split_json.py output/merge.json
