@@ -11,6 +11,12 @@ sheetsAll=(
     {"merge","1tapDg3OMX_7FkkoIxu23ijw6NNh3lrlV2cA-5Oz3IOI"}
 )
 
+# 配置拆分后的JSON文件输出目录
+# 默认为空，使用默认路径（输入文件的父目录的父目录下的export文件夹）
+# 如果需要自定义输出目录，请取消下面一行的注释并修改路径
+# export_dir="XProject/Assets/ExtraRes/Configs/DataJson"
+export_dir=""
+
 ######################################
 # 以下为脚本逻辑，一般不需要修改
 ######################################
@@ -52,7 +58,9 @@ listAll(){
     echo "附加选项："
     echo "--single-sheet - 只导出默认工作表（与表格编号或名称一起使用）"
     echo "--no-split - 不拆分JSON文件（默认会拆分）"
+    echo "--output-dir <dir> - 指定拆分后的JSON文件输出目录"
     echo "例如: ./export_sheets_oauth.sh 1 --single-sheet --no-split"
+    echo "例如: ./export_sheets_oauth.sh 1 --output-dir XProject/Assets/ExtraRes/Configs/DataJson"
 }
 
 idxBegin=-1
@@ -70,6 +78,12 @@ for arg in "$@"; do
         split_json=true
     elif [ "$arg" == "--no-split" ]; then
         split_json=false
+    elif [ "$arg" == "--output-dir" ]; then
+        # 下一个参数是输出目录
+        shift
+        export_dir="$1"
+        shift
+        continue
     elif [ "$idxBegin" -lt "0" ]; then
         num=`isNum $arg`
         if [ $num == "true" ]; then
@@ -114,6 +128,9 @@ fi
 
 if [ "$split_json" == "true" ]; then
     echo "将拆分导出的JSON文件（默认）"
+    if [ ! -z "$export_dir" ]; then
+        echo "拆分后的JSON文件将保存到: $export_dir"
+    fi
 else
     echo "不拆分导出的JSON文件"
 fi
@@ -152,6 +169,10 @@ for ((i = idxBegin; i < idxEnd; i++)); do
     # 如果需要拆分JSON文件，添加--split参数
     if [ "$split_json" == "true" ]; then
         cmd_args="$cmd_args --split"
+        # 如果指定了输出目录，则添加--output-dir参数
+        if [ ! -z "$export_dir" ]; then
+            cmd_args="$cmd_args --output-dir \"$export_dir\""
+        fi
     else
         cmd_args="$cmd_args --no-split"
     fi

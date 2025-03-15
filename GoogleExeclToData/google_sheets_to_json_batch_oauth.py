@@ -235,6 +235,7 @@ def main():
     parser.add_argument('--sheet_name', help='工作表名称(默认为第一个工作表)')
     parser.add_argument('--split', action='store_true', help='是否将导出的JSON文件拆分成多个子文件')
     parser.add_argument('--no-split', action='store_true', help='不拆分JSON文件（默认会拆分）')
+    parser.add_argument('--output-dir', help='拆分后的JSON文件输出目录路径，默认为输入文件的父目录的父目录下的export文件夹')
     
     args = parser.parse_args()
     
@@ -268,7 +269,7 @@ def main():
     # 如果需要拆分JSON文件
     if should_split:
         print(f"正在拆分JSON文件: {args.output}")
-        split_success = split_json_file(args.output)
+        split_success = split_json_file(args.output, args.output_dir)
         if not split_success:
             print("拆分JSON文件失败")
             return 1

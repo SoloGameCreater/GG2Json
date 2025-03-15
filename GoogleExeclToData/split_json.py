@@ -26,6 +26,7 @@ def main():
     # 解析命令行参数
     parser = argparse.ArgumentParser(description='将JSON文件按顶级键拆分成多个子文件')
     parser.add_argument('--input', required=True, help='输入JSON文件路径')
+    parser.add_argument('--output-dir', help='输出目录路径，默认为输入文件的父目录的父目录下的export文件夹')
     
     # 如果没有参数，但有位置参数，则将第一个位置参数作为输入文件
     if len(sys.argv) == 2 and not sys.argv[1].startswith('--'):
@@ -35,7 +36,7 @@ def main():
     
     # 拆分JSON文件
     print(f"正在拆分JSON文件: {args.input}")
-    success = split_json_file(args.input)
+    success = split_json_file(args.input, args.output_dir)
     
     if success:
         print("拆分JSON文件成功")

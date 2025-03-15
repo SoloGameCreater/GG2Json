@@ -139,7 +139,7 @@ https://docs.google.com/spreadsheets/d/1KM52Dg08TlbETfnsmzm0gj6g__7wvGpXcf-4ZfGO
 - `MergeableItem.json`
 - `MergeChain.json`
 
-这些文件将保存在原始JSON文件的父目录的父目录下的`export`文件夹中。
+这些文件默认将保存在原始JSON文件的父目录的父目录下的`export`文件夹中。您也可以通过`--output-dir`参数指定自定义输出目录。
 
 ### 使用方法
 
@@ -157,6 +157,12 @@ python google_sheets_to_json_batch_oauth.py --sheet_id YOUR_SHEET_ID --output ou
 python google_sheets_to_json_batch_oauth.py --sheet_id YOUR_SHEET_ID --output output/data.json --credentials YOUR_CREDENTIALS_FILE --format sheet_grouped --no-split
 ```
 
+如果您希望将拆分后的JSON文件保存到自定义目录，可以添加`--output-dir`参数：
+
+```bash
+python google_sheets_to_json_batch_oauth.py --sheet_id YOUR_SHEET_ID --output output/data.json --credentials YOUR_CREDENTIALS_FILE --format sheet_grouped --output-dir XProject/Assets/ExtraRes/Configs/DataJson
+```
+
 #### 2. 单独拆分已有的JSON文件
 
 您也可以使用单独的脚本来拆分已经存在的JSON文件：
@@ -171,7 +177,30 @@ python json_splitter.py --input output/merge.json
 python split_json.py output/merge.json
 ```
 
-这将读取`output/merge.json`文件，并将其拆分成多个子文件，保存在`export`目录中。
+如果您希望将拆分后的JSON文件保存到自定义目录，可以添加`--output-dir`参数：
+
+```bash
+python json_splitter.py --input output/merge.json --output-dir XProject/Assets/ExtraRes/Configs/DataJson
+```
+
+这将读取`output/merge.json`文件，并将其拆分成多个子文件，保存在指定的目录中。
+
+### 在批处理脚本中配置输出目录
+
+您可以通过以下两种方式在批处理脚本中配置输出目录：
+
+1. 在脚本文件中修改`export_dir`变量：
+
+```bash
+# 配置拆分后的JSON文件输出目录
+export_dir="XProject/Assets/ExtraRes/Configs/DataJson"
+```
+
+2. 在命令行中使用`--output-dir`参数：
+
+```bash
+./export_sheets_oauth.sh 1 --output-dir XProject/Assets/ExtraRes/Configs/DataJson
+```
 
 ## 注意事项
 

@@ -19,12 +19,13 @@ if sys.platform == 'win32':
     except Exception as e:
         print(f"设置控制台编码时出错: {e}")
 
-def split_json_file(input_file):
+def split_json_file(input_file, output_dir=None):
     """
     将JSON文件按照顶级键拆分成多个子文件
     
     Args:
         input_file (str): 输入JSON文件的路径
+        output_dir (str, optional): 输出目录的路径，如果为None，则使用默认路径
     
     Returns:
         bool: 操作是否成功
@@ -46,16 +47,23 @@ def split_json_file(input_file):
         if not isinstance(data, dict):
             print(f"错误: 文件 '{input_file}' 不是有效的JSON对象")
             return False
-        
+        #"XProject\Assets\ExtraRes\Configs\DataJson"
+
         # 创建输出目录
-        # 输出目录是输入文件的父目录的父目录下的export文件夹
-        output_dir = input_path.parent.parent / 'export'
-        output_dir.mkdir(exist_ok=True)
+        if output_dir:
+            # 如果指定了输出目录，则使用指定的目录
+            output_path = input_path.parent.parent.parent.parent / output_dir
+        else:
+            # 否则，使用默认路径（输入文件的父目录的父目录下的export文件夹）
+            output_path = input_path.parent.parent / 'export'
+        
+        # 确保输出目录存在
+        output_path.mkdir(exist_ok=True, parents=True)
         
         # 拆分JSON文件
         for key, value in data.items():
             # 创建输出文件路径
-            output_file = output_dir / f"{key}.json"
+            output_file = output_path / f"{key}.json"
             
             # 将数据写入输出文件
             with open(output_file, 'w', encoding='utf-8') as f:
@@ -74,6 +82,7 @@ def main():
     # 解析命令行参数
     parser = argparse.ArgumentParser(description='将JSON文件按顶级键拆分成多个子文件')
     parser.add_argument('--input', required=True, help='输入JSON文件路径')
+    parser.add_argument('--output-dir', help='输出目录路径，默认为输入文件的父目录的父目录下的export文件夹')
     
     # 如果没有参数，但有位置参数，则将第一个位置参数作为输入文件
     if len(sys.argv) == 2 and not sys.argv[1].startswith('--'):
@@ -83,7 +92,7 @@ def main():
     
     # 拆分JSON文件
     print(f"正在拆分JSON文件: {args.input}")
-    success = split_json_file(args.input)
+    success = split_json_file(args.input, args.output_dir)
     
     if success:
         print("拆分JSON文件成功")
