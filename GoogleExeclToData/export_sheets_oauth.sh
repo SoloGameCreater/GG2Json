@@ -60,8 +60,9 @@ listAll(){
     echo "--single-sheet - 只导出默认工作表（与表格编号或名称一起使用）"
     echo "--no-split - 不拆分JSON文件（默认会拆分）"
     echo "--output-dir <dir> - 指定拆分后的JSON文件输出目录"
+    echo "--output-script-dir <dir> - 指定拆分后的脚本文件输出目录"
     echo "例如: ./export_sheets_oauth.sh 1 --single-sheet --no-split"
-    echo "例如: ./export_sheets_oauth.sh 1 --output-dir XProject/Assets/ExtraRes/Configs/DataJson"
+    echo "例如: ./export_sheets_oauth.sh 1 --output-dir XProject/Assets/ExtraRes/Configs/DataJson --output-script-dir XProject/Assets/GameMain/Scripts/Common/Config"
 }
 
 idxBegin=-1
@@ -83,6 +84,12 @@ for arg in "$@"; do
         # 下一个参数是输出目录
         shift
         export_dir="$1"
+        shift
+        continue
+    elif [ "$arg" == "--output-script-dir" ]; then
+        # 下一个参数是脚本输出目录
+        shift
+        export_script_dir="$1"
         shift
         continue
     elif [ "$idxBegin" -lt "0" ]; then
@@ -132,6 +139,9 @@ if [ "$split_json" == "true" ]; then
     if [ ! -z "$export_dir" ]; then
         echo "拆分后的JSON文件将保存到: $export_dir"
     fi
+    if [ ! -z "$export_script_dir" ]; then
+        echo "拆分后的脚本文件将保存到: $export_script_dir"
+    fi
 else
     echo "不拆分导出的JSON文件"
 fi
@@ -173,6 +183,10 @@ for ((i = idxBegin; i < idxEnd; i++)); do
         # 如果指定了输出目录，则添加--output-dir参数
         if [ ! -z "$export_dir" ]; then
             cmd_args="$cmd_args --output-dir \"$export_dir\""
+        fi
+        # 如果指定了脚本输出目录，则添加--output-script-dir参数
+        if [ ! -z "$export_script_dir" ]; then
+            cmd_args="$cmd_args --output-script-dir \"$export_script_dir\""
         fi
     else
         cmd_args="$cmd_args --no-split"

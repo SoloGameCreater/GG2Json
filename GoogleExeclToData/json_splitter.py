@@ -41,14 +41,14 @@ def ensure_codegen_dir(output_path, name):
     print(f"已确保目录存在: {codegen_dir}")
     return codegen_dir
 
-def split_json_file(input_file, output_dir=None):
+def split_json_file(input_file, output_dir=None, output_script_dir=None):
     """
     将JSON文件按照顶级键拆分成多个子文件
     
     Args:
         input_file (str): 输入JSON文件的路径
         output_dir (str, optional): 输出目录的路径，如果为None，则使用默认路径
-    
+        output_script_dir (str, optional): 输出脚本目录的路径，如果为None，则使用默认路径
     Returns:
         bool: 操作是否成功
     """
@@ -72,13 +72,8 @@ def split_json_file(input_file, output_dir=None):
         
         # 创建输出目录
         if output_dir:
-            # 如果指定了输出目录，则使用指定的目录
-            # 将输出目录转换为Path对象
-            output_path = Path(output_dir)
-            # 如果是相对路径，则相对于当前工作目录解析
-            if not output_path.is_absolute():
-                output_path = Path.cwd() / output_path
-            print(f"使用指定的输出目录: {output_path}")
+            output_path = input_path.parent.parent.parent.parent / output_dir
+            output_script_path = input_path.parent.parent.parent.parent / output_script_dir
         else:
             # 否则，使用默认路径（输入文件的父目录的父目录下的export文件夹）
             output_path = input_path.parent.parent / 'export'
@@ -90,7 +85,7 @@ def split_json_file(input_file, output_dir=None):
         table_name = input_path.stem
         
         # 确保$name/GodeGen文件夹存在
-        codegen_dir = ensure_codegen_dir(output_path, table_name)
+        codegen_dir = ensure_codegen_dir(output_script_path, table_name)
         
         # 拆分JSON文件
         for key, value in data.items():
@@ -115,7 +110,7 @@ def main():
     parser = argparse.ArgumentParser(description='将JSON文件按顶级键拆分成多个子文件')
     parser.add_argument('--input', required=True, help='输入JSON文件路径')
     parser.add_argument('--output-dir', help='输出目录路径，默认为输入文件的父目录的父目录下的export文件夹')
-    
+    parser.add_argument('--output-script-dir', help='输出脚本目录路径，默认为输入文件的父目录的父目录下的GodeGen文件夹')
     # 如果没有参数，但有位置参数，则将第一个位置参数作为输入文件
     if len(sys.argv) == 2 and not sys.argv[1].startswith('--'):
         args = parser.parse_args(['--input', sys.argv[1]])
@@ -124,7 +119,7 @@ def main():
     
     # 拆分JSON文件
     print(f"正在拆分JSON文件: {args.input}")
-    success = split_json_file(args.input, args.output_dir)
+    success = split_json_file(args.input, args.output_dir, args.output_script_dir)
     
     if success:
         print("拆分JSON文件成功")
