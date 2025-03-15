@@ -15,7 +15,7 @@ sheetsAll=(
 # 默认为空，使用默认路径（输入文件的父目录的父目录下的export文件夹）
 # 如果需要自定义输出目录，请取消下面一行的注释并修改路径
 # export_dir="XProject/Assets/ExtraRes/Configs/DataJson"
-export_dir=""
+export_dir="XProject/Assets/ExtraRes/Configs/DataJson"
 
 ######################################
 # 以下为脚本逻辑，一般不需要修改
