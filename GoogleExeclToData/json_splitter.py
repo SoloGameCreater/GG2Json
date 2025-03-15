@@ -19,6 +19,28 @@ if sys.platform == 'win32':
     except Exception as e:
         print(f"设置控制台编码时出错: {e}")
 
+def ensure_codegen_dir(output_path, name):
+    """
+    确保输出目录下存在名为$name/GodeGen的文件夹
+    
+    Args:
+        output_path (Path): 输出目录路径
+        name (str): 表格名称
+    
+    Returns:
+        Path: GodeGen文件夹路径
+    """
+    # 创建$name文件夹
+    name_dir = output_path / name
+    name_dir.mkdir(exist_ok=True, parents=True)
+    
+    # 创建$name/GodeGen文件夹
+    codegen_dir = name_dir / "GodeGen"
+    codegen_dir.mkdir(exist_ok=True, parents=True)
+    
+    print(f"已确保目录存在: {codegen_dir}")
+    return codegen_dir
+
 def split_json_file(input_file, output_dir=None):
     """
     将JSON文件按照顶级键拆分成多个子文件
@@ -47,18 +69,28 @@ def split_json_file(input_file, output_dir=None):
         if not isinstance(data, dict):
             print(f"错误: 文件 '{input_file}' 不是有效的JSON对象")
             return False
-        #"XProject\Assets\ExtraRes\Configs\DataJson"
-
+        
         # 创建输出目录
         if output_dir:
             # 如果指定了输出目录，则使用指定的目录
-            output_path = input_path.parent.parent.parent.parent / output_dir
+            # 将输出目录转换为Path对象
+            output_path = Path(output_dir)
+            # 如果是相对路径，则相对于当前工作目录解析
+            if not output_path.is_absolute():
+                output_path = Path.cwd() / output_path
+            print(f"使用指定的输出目录: {output_path}")
         else:
             # 否则，使用默认路径（输入文件的父目录的父目录下的export文件夹）
             output_path = input_path.parent.parent / 'export'
         
         # 确保输出目录存在
         output_path.mkdir(exist_ok=True, parents=True)
+        
+        # 获取表格名称（输入文件名，不包含扩展名）
+        table_name = input_path.stem
+        
+        # 确保$name/GodeGen文件夹存在
+        codegen_dir = ensure_codegen_dir(output_path, table_name)
         
         # 拆分JSON文件
         for key, value in data.items():

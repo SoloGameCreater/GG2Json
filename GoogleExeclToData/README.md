@@ -141,6 +141,8 @@ https://docs.google.com/spreadsheets/d/1KM52Dg08TlbETfnsmzm0gj6g__7wvGpXcf-4ZfGO
 
 这些文件默认将保存在原始JSON文件的父目录的父目录下的`export`文件夹中。您也可以通过`--output-dir`参数指定自定义输出目录。
 
+此外，程序会在输出目录下自动创建`$name/GodeGen`文件夹，其中`$name`是输入JSON文件的名称（不包含扩展名）。例如，如果输入文件是`merge.json`，则会创建`merge/GodeGen`文件夹。
+
 ### 使用方法
 
 #### 1. 在导出时自动拆分（默认行为）

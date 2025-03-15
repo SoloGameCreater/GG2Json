@@ -5,7 +5,7 @@ import os
 import sys
 import argparse
 from pathlib import Path
-from json_splitter import split_json_file
+from json_splitter import split_json_file, ensure_codegen_dir
 
 # 设置控制台输出编码为UTF-8
 if sys.platform == 'win32':

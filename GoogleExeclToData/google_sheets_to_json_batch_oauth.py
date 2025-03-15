@@ -12,7 +12,7 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import pandas as pd
 # 导入JSON拆分模块
-from json_splitter import split_json_file
+from json_splitter import split_json_file, ensure_codegen_dir
 
 # 设置控制台输出编码为UTF-8
 if sys.platform == 'win32':

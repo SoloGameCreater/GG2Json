@@ -8,14 +8,15 @@ credentialsFile="client_secret_942388970445-ck7iefag4jn02bu92nq94t0o2m1a2ffr.app
 
 # 配置表格信息数组 (表格名称,表格ID,输出文件名,格式类型)
 sheetsAll=(
-    {"merge","1tapDg3OMX_7FkkoIxu23ijw6NNh3lrlV2cA-5Oz3IOI"}
+    {"TripleMerge","1tapDg3OMX_7FkkoIxu23ijw6NNh3lrlV2cA-5Oz3IOI"}
 )
 
 # 配置拆分后的JSON文件输出目录
 # 默认为空，使用默认路径（输入文件的父目录的父目录下的export文件夹）
 # 如果需要自定义输出目录，请取消下面一行的注释并修改路径
-# export_dir="XProject/Assets/ExtraRes/Configs/DataJson"
 export_dir="XProject/Assets/ExtraRes/Configs/DataJson"
+
+export_script_dir="XProject/Assets/GameMain/Scripts/Common/Config"
 
 ######################################
 # 以下为脚本逻辑，一般不需要修改
