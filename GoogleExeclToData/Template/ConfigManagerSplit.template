@@ -8,7 +8,7 @@ using Framework;
 
 {{#each subTypeArray}}using Config.{{{this.subType}}};
 {{/each}}
-namespace My.Config.{{this.nameSpace}}
+namespace Config.{{this.nameSpace}}
 {
     public partial class {{{this.managerClassName}}}
     {   

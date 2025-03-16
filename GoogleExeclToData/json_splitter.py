@@ -64,6 +64,128 @@ def convert_type_to_csharp(json_type):
     
     return type_mapping.get(json_type, 'string')  # 默认返回string类型
 
+def generate_config_manager(output_dir, table_name, sheet_names):
+    """
+    生成ConfigManager类文件
+    
+    Args:
+        output_dir (Path): 输出目录路径
+        table_name (str): 表格名称
+        sheet_names (list): 工作表名称列表
+    
+    Returns:
+        bool: 是否成功
+    """
+    try:
+        # 读取模板文件
+        template_file = Path("Template/ConfigManagerSplit.template")
+        if not template_file.exists():
+            print(f"错误: 模板文件 '{template_file}' 不存在")
+            return False
+            
+        with open(template_file, 'r', encoding='utf-8') as f:
+            template = f.read()
+        
+        # 准备数据
+        manager_class_name = f"{table_name}ConfigManager"
+        
+        # 准备字段数组
+        field_array = []
+        for sheet_name in sheet_names:
+            field_array.append({
+                'configClassName': sheet_name,
+                'lowersheetname': sheet_name.lower()
+            })
+        
+        # 创建结果字符串
+        result = template
+        
+        # 1. 替换命名空间和类名
+        result = result.replace("{{this.nameSpace}}", table_name)
+        result = result.replace("{{{this.managerClassName}}}", manager_class_name)
+        result = result.replace("{{{this.jsonPath}}}", f"Config/{table_name}")
+        
+        # 2. 移除子类型相关的部分
+        result = re.sub(r'{{#each subTypeArray}}.*?{{/each}}', '', result, flags=re.DOTALL)
+        
+        # 3. 处理配置属性
+        config_props = []
+        for field in field_array:
+            config_props.append(f"public List<{field['configClassName']}> {field['configClassName']}List => getConfig<{field['configClassName']}>();")
+        config_props_str = "\n        ".join(config_props)
+        
+        # 替换配置属性部分
+        result = re.sub(r'{{#each fieldArray}}public {{#isSingleTable this\.configClassName}}.*?{{/isSingleTable}}\n        {{/each}}', 
+                        config_props_str + "\n        ", result, flags=re.DOTALL)
+        
+        # 4. 处理私有字段列表
+        private_lists = []
+        for field in field_array:
+            private_lists.append(f"private List<{field['configClassName']}> {field['lowersheetname']}List;")
+        private_lists_str = "\n        ".join(private_lists)
+        
+        # 替换私有字段列表部分
+        result = re.sub(r'{{#each fieldArray}}private List<{{{this\.configClassName}}}> {{{this\.lowersheetname}}}List;\n        {{/each}}', 
+                        private_lists_str + "\n        ", result, flags=re.DOTALL)
+        
+        # 5. 处理类型字典
+        type_dict_entries = []
+        for i, field in enumerate(field_array):
+            entry = f"[typeof({field['configClassName']})] = \"{field['lowersheetname']}\""
+            if i < len(field_array) - 1:
+                entry += ","
+            type_dict_entries.append(entry)
+        type_dict_str = "\n            ".join(type_dict_entries)
+        
+        # 替换类型字典部分
+        result = re.sub(r'{{#each fieldArray}}\[typeof\({{{this\.configClassName}}}\)\] = "{{{this\.lowersheetname}}}",\n            {{/each}}', 
+                        type_dict_str, result, flags=re.DOTALL)
+        
+        # 6. 处理tryLoad方法中的case语句
+        try_load_cases = []
+        for field in field_array:
+            try_load_cases.append(f"case \"{field['lowersheetname']}\": if ({field['lowersheetname']}List != null) return; break;")
+        try_load_cases_str = "\n                ".join(try_load_cases)
+        
+        # 替换tryLoad方法中的case语句部分
+        result = re.sub(r'{{#each fieldArray}}case "{{{this\.lowersheetname}}}": if \({{{this\.lowersheetname}}}List != null\) return; break;\n                {{/each}}', 
+                        try_load_cases_str, result, flags=re.DOTALL)
+        
+        # 7. 处理tryLoad方法中的switch语句
+        switch_cases = []
+        for field in field_array:
+            switch_cases.append(f"case \"{field['lowersheetname']}\": {field['lowersheetname']}List = JsonConvert.DeserializeObject<List<{field['configClassName']}>>(ta.text); break;")
+        switch_cases_str = "\n                ".join(switch_cases)
+        
+        # 替换tryLoad方法中的switch语句部分
+        result = re.sub(r'{{#each fieldArray}}case "{{{this\.lowersheetname}}}": {{{this\.lowersheetname}}}List = JsonConvert\.DeserializeObject<List<{{{this\.configClassName}}}>>\(ta\.text\); break;\n                {{/each}}', 
+                        switch_cases_str, result, flags=re.DOTALL)
+        
+        # 8. 处理getConfig方法中的switch语句
+        get_config_cases = []
+        for field in field_array:
+            get_config_cases.append(f"case \"{field['lowersheetname']}\": return {field['lowersheetname']}List as List<T>;")
+        get_config_cases_str = "\n                ".join(get_config_cases)
+        
+        # 替换getConfig方法中的switch语句部分
+        result = re.sub(r'{{#each fieldArray}}case "{{{this\.lowersheetname}}}": return {{{this\.lowersheetname}}}List as List<T>;\n                {{/each}}', 
+                        get_config_cases_str, result, flags=re.DOTALL)
+        
+        # 9. 清理多余的空行
+        result = re.sub(r'\n\s*\n\s*\n', '\n\n', result)
+        
+        # 写入输出文件
+        output_file = output_dir / f"{manager_class_name}.Loader.cs"
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(result)
+        
+        print(f"已生成ConfigManager文件: {output_file}")
+        return True
+        
+    except Exception as e:
+        print(f"生成ConfigManager文件时出错: {e}")
+        return False
+
 def generate_cs_file(template_path, output_dir, class_name, name_space, fields_data):
     """
     生成C#代码文件
@@ -198,8 +320,14 @@ def split_json_file(input_file, output_dir=None, output_script_dir=None):
         # 确保$name/GodeGen文件夹存在
         codegen_dir = ensure_codegen_dir(output_script_path, table_name)
         
+        # 收集所有工作表名称
+        sheet_names = []
+        
         # 拆分JSON文件
         for key, value in data.items():
+            # 添加工作表名称
+            sheet_names.append(key)
+            
             # 创建输出文件路径
             output_file = output_path / f"{key}.json"
             
@@ -232,6 +360,9 @@ def split_json_file(input_file, output_dir=None, output_script_dir=None):
                     table_name,  # 命名空间
                     fields_data
                 )
+        
+        # 生成ConfigManager类文件
+        generate_config_manager(codegen_dir, table_name, sheet_names)
         
         return True
     
