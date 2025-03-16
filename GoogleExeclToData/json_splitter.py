@@ -368,6 +368,56 @@ def split_json_file(input_file, output_dir=None, output_script_dir=None):
                         if field_value is None or field_value == "":
                             continue
                         
+                        # 根据第一行定义的字段类型进行类型转换
+                        if field_name in field_types:
+                            field_type = field_types[field_name]
+                            
+                            # 字符串类型转换
+                            if field_type == 'string' and not isinstance(field_value, str):
+                                field_value = str(field_value)
+                            
+                            # 数字类型转换
+                            elif field_type == 'number' and isinstance(field_value, str):
+                                try:
+                                    if '.' in field_value:
+                                        field_value = float(field_value)
+                                    else:
+                                        field_value = int(field_value)
+                                except ValueError:
+                                    # 如果转换失败，保留原始值
+                                    pass
+                            
+                            # 布尔类型转换
+                            elif field_type == 'bool':
+                                if isinstance(field_value, str):
+                                    if field_value.lower() in ('true', '1'):
+                                        field_value = True
+                                    elif field_value.lower() in ('false', '0'):
+                                        field_value = False
+                                elif isinstance(field_value, (int, float)):
+                                    field_value = bool(field_value)
+                            
+                            # 数组类型转换
+                            elif field_type == 'arraynumber' and isinstance(field_value, str):
+                                try:
+                                    # 尝试将逗号分隔的字符串转换为数字列表
+                                    if ',' in field_value:
+                                        field_value = [int(x.strip()) if x.strip().isdigit() else float(x.strip()) for x in field_value.split(',') if x.strip()]
+                                except ValueError:
+                                    # 如果转换失败，保留原始值
+                                    pass
+                            
+                            # 浮点数类型转换
+                            elif field_type == 'float':
+                                if isinstance(field_value, str):
+                                    try:
+                                        field_value = float(field_value)
+                                    except ValueError:
+                                        # 如果转换失败，保留原始值
+                                        pass
+                                elif isinstance(field_value, int):
+                                    field_value = float(field_value)
+                        
                         filtered_row[field_name] = field_value
                     
                     filtered_data.append(filtered_row)
