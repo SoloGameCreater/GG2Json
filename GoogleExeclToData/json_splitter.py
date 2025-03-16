@@ -323,13 +323,73 @@ def split_json_file(input_file, output_dir=None, output_script_dir=None):
         # 收集所有工作表名称
         sheet_names = []
         
+        # 清空export目录中的现有文件
+        for file in output_path.glob("*.json"):
+            try:
+                file.unlink()
+                print(f"已删除文件: {file}")
+            except Exception as e:
+                print(f"删除文件 {file} 时出错: {e}")
+        
         # 拆分JSON文件
         for key, value in data.items():
             # 添加工作表名称
             sheet_names.append(key)
             
-            # 创建输出文件路径
-            output_file = output_path / f"{key}.json"
+            # 处理数据，忽略note类型字段和空值
+            if isinstance(value, list) and len(value) >= 2:
+                # 第一个元素包含字段类型
+                field_types = value[0]
+                
+                # 过滤字段类型，移除note字段
+                filtered_field_types = {}
+                for field_name, field_type in field_types.items():
+                    if field_type != 'note':
+                        filtered_field_types[field_name] = field_type
+                
+                # 过滤后的数据
+                filtered_data = []
+                
+                # 添加过滤后的字段类型
+                filtered_data.append(filtered_field_types)
+                
+                # 添加过滤后的字段描述（如果存在）
+                if len(value) > 1:
+                    field_descs = value[1]
+                    filtered_field_descs = {}
+                    for field_name, field_desc in field_descs.items():
+                        if field_name in filtered_field_types:
+                            filtered_field_descs[field_name] = field_desc
+                    filtered_data.append(filtered_field_descs)
+                
+                # 处理数据行（从第三个元素开始）
+                for i in range(2, len(value)):
+                    row = value[i]
+                    filtered_row = {}
+                    
+                    for field_name, field_value in row.items():
+                        # 忽略类型为note的字段
+                        if field_name in field_types and field_types[field_name] == 'note':
+                            continue
+                        
+                        # 忽略不在过滤后的字段类型中的字段
+                        if field_name not in filtered_field_types:
+                            continue
+                        
+                        # 忽略空值字段
+                        if field_value is None or field_value == "":
+                            continue
+                        
+                        filtered_row[field_name] = field_value
+                    
+                    filtered_data.append(filtered_row)
+                
+                # 更新处理后的数据
+                value = filtered_data
+            
+            # 创建输出文件路径（使用小写的工作表名称）
+            lowercase_key = key.lower()
+            output_file = output_path / f"{lowercase_key}.json"
             
             # 将数据写入输出文件
             with open(output_file, 'w', encoding='utf-8') as f:
