@@ -1,0 +1,59 @@
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using Newtonsoft.Json;
+using Framework;
+
+{{#each subTypeArray}}using Config.{{{this.subType}}};
+{{/each}}
+namespace My.Config.{{this.nameSpace}}
+{
+    public partial class {{{this.managerClassName}}}
+    {   
+        {{#each subTypeArray}}public {{{this.subType}}}ConfigManager {{{this.subType}}}Config;
+        {{/each}}
+        {{#each fieldArray}}public {{#isSingleTable this.configClassName}}{{{this.configClassName}}} {{{this.configClassName}}}Config => getConfig<{{{this.configClassName}}}>()[0];{{else}}List<{{{this.configClassName}}}> {{{this.configClassName}}}List => getConfig<{{{this.configClassName}}}>();{{/isSingleTable}}
+        {{/each}}
+        {{#each fieldArray}}private List<{{{this.configClassName}}}> {{{this.lowersheetname}}}List;
+        {{/each}}
+        private readonly Dictionary<Type, string> typeToEnum = new Dictionary<Type,string> { 
+            {{#each fieldArray}}[typeof({{{this.configClassName}}})] = "{{{this.lowersheetname}}}",
+            {{/each}}
+        };
+        private void tryLoad(string subModule)
+        {
+            switch (subModule)
+            { 
+                {{#each fieldArray}}case "{{{this.lowersheetname}}}": if ({{{this.lowersheetname}}}List != null) return; break;
+                {{/each}}
+                default: throw new ArgumentOutOfRangeException(nameof(subModule), subModule, null);
+            }
+            var path = $"{{{this.jsonPath}}}/{subModule}";
+            var ta = ResourcesManager.Instance.LoadResource<TextAsset>(path);
+            if (string.IsNullOrEmpty(ta.text))
+            {
+                DebugUtil.LogError($"Load {path} error!");
+                return;
+            }
+            switch (subModule)
+            { 
+                {{#each fieldArray}}case "{{{this.lowersheetname}}}": {{{this.lowersheetname}}}List = JsonConvert.DeserializeObject<List<{{{this.configClassName}}}>>(ta.text); break;
+                {{/each}}
+                default: throw new ArgumentOutOfRangeException(nameof(subModule), subModule, null);
+            }
+        }
+        private List<T> getConfig<T>()
+        {
+            var subModule = typeToEnum[typeof(T)];
+            tryLoad(subModule);
+            switch (subModule)
+            { 
+                {{#each fieldArray}}case "{{{this.lowersheetname}}}": return {{{this.lowersheetname}}}List as List<T>;
+                {{/each}}
+                default: throw new ArgumentOutOfRangeException(nameof(subModule), subModule, null);
+            }
+        }
+    }
+}

@@ -1,0 +1,18 @@
+/************************************************
+ * Config class is : {{className}}
+ ************************************************/
+
+using System;
+using System.Collections.Generic;
+
+namespace Config.{{nameSpace}}
+{
+    public class {{className}}
+    {   {{#each fieldArray}}
+        /// <summary>
+        /// {{{this.desc}}}
+        /// </summary>
+        public {{{this.realType}}} {{this.getterName}} { get; set; }
+        {{/each}}
+    }
+}
