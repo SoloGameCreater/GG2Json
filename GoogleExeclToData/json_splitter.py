@@ -427,7 +427,13 @@ def split_json_file(input_file, output_dir=None, output_script_dir=None):
             
             # 创建输出文件路径（使用小写的工作表名称）
             lowercase_key = key.lower()
-            output_file = output_path / f"{lowercase_key}.json"
+            
+            # 创建与表格名相同的子文件夹
+            table_folder = output_path / table_name
+            table_folder.mkdir(exist_ok=True, parents=True)
+            
+            # 输出文件路径现在包含表格名子文件夹
+            output_file = table_folder / f"{lowercase_key}.json"
             
             # 将数据写入输出文件
             with open(output_file, 'w', encoding='utf-8') as f:
