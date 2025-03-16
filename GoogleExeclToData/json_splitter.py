@@ -246,7 +246,7 @@ def generate_cs_file(template_path, output_dir, class_name, name_space, fields_d
             field_template = """        /// <summary>
         /// {{{desc}}}
         /// </summary>
-        public {{{realType}}} {{getterName}} {{ get; set; }}
+        public {{{realType}}} {{getterName}} { get; set; }
 """
             field_content = field_template.replace('{{{desc}}}', formatted_desc)
             field_content = field_content.replace('{{{realType}}}', field['realType'])
