@@ -347,22 +347,10 @@ def split_json_file(input_file, output_dir=None, output_script_dir=None):
                     if field_type != 'note':
                         filtered_field_types[field_name] = field_type
                 
-                # 过滤后的数据
+                # 只保留数据行，不包含字段类型和字段描述
                 filtered_data = []
                 
-                # 添加过滤后的字段类型
-                filtered_data.append(filtered_field_types)
-                
-                # 添加过滤后的字段描述（如果存在）
-                if len(value) > 1:
-                    field_descs = value[1]
-                    filtered_field_descs = {}
-                    for field_name, field_desc in field_descs.items():
-                        if field_name in filtered_field_types:
-                            filtered_field_descs[field_name] = field_desc
-                    filtered_data.append(filtered_field_descs)
-                
-                # 处理数据行（从第三个元素开始）
+                # 处理所有数据行（从第三个元素开始，即索引为2）
                 for i in range(2, len(value)):
                     row = value[i]
                     filtered_row = {}
@@ -397,19 +385,18 @@ def split_json_file(input_file, output_dir=None, output_script_dir=None):
             
             print(f"已创建文件: {output_file}")
             
-            # 检查value是否是列表且至少有两个元素
+            # 为C#代码生成保存原始的字段类型和描述
             if isinstance(value, list) and len(value) >= 2:
-                # 第一个元素包含字段类型
-                field_types = value[0]
-                # 第二个元素包含字段描述
-                field_descs = value[1]
+                # 获取原始数据中的字段类型和描述
+                original_field_types = data[key][0]
+                original_field_descs = data[key][1] if len(data[key]) > 1 else {}
                 
                 # 准备字段数据
                 fields_data = {}
-                for field_name, field_type in field_types.items():
+                for field_name, field_type in original_field_types.items():
                     fields_data[field_name] = {
                         'type': field_type,
-                        'desc': field_descs.get(field_name, "")
+                        'desc': original_field_descs.get(field_name, "")
                     }
                 
                 # 生成对应的C#代码文件
