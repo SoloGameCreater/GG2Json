@@ -30,7 +30,7 @@ namespace Config.{{this.nameSpace}}
                 {{/each}}
                 default: throw new ArgumentOutOfRangeException(nameof(subModule), subModule, null);
             }
-            var path = $"Configs/DataJson/{subModule}";
+            var path = $"Configs/DataJson/{{this.nameSpace}}/{subModule}";
             var ta = ResourcesManager.Instance.LoadResource<TextAsset>(path);
             if (string.IsNullOrEmpty(ta.text))
             {
