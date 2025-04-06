@@ -398,14 +398,36 @@ def split_json_file(input_file, output_dir=None, output_script_dir=None):
                                     field_value = bool(field_value)
                             
                             # 数组类型转换
-                            elif field_type == 'arraynumber' and isinstance(field_value, str):
-                                try:
-                                    # 尝试将逗号分隔的字符串转换为数字列表
-                                    if ',' in field_value:
-                                        field_value = [int(x.strip()) if x.strip().isdigit() else float(x.strip()) for x in field_value.split(',') if x.strip()]
-                                except ValueError:
-                                    # 如果转换失败，保留原始值
+                            elif field_type == 'arraynumber':
+                                # 如果已经是列表，无需处理
+                                if isinstance(field_value, list):
                                     pass
+                                # 如果是字符串，按照逗号分隔或单个值转换
+                                elif isinstance(field_value, str):
+                                    try:
+                                        # 尝试将字符串转换为数字列表，无论是否包含逗号
+                                        if ',' in field_value:
+                                            field_value = [int(x.strip()) if x.strip().isdigit() else float(x.strip()) for x in field_value.split(',') if x.strip()]
+                                        else:
+                                            # 单个数字也转换为列表
+                                            try:
+                                                if field_value.strip().isdigit():
+                                                    field_value = [int(field_value.strip())]
+                                                else:
+                                                    field_value = [float(field_value.strip())]
+                                            except ValueError:
+                                                print(f"转换失败，保留原始值: {field_value}")
+                                                # 如果转换失败，包装原始值为列表
+                                                field_value = [field_value]
+                                    except ValueError:
+                                        # 如果转换失败，保留原始值，但包装为列表
+                                        field_value = [field_value]
+                                # 如果是数字（整数或浮点数），直接包装为列表
+                                elif isinstance(field_value, (int, float)):
+                                    field_value = [field_value]
+                                # 其他类型，尝试包装为列表
+                                else:
+                                    field_value = [field_value]
                             
                             # 浮点数类型转换
                             elif field_type == 'float':
